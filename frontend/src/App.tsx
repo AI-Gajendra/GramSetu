@@ -5,7 +5,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AssistantPage from "./pages/AssistantPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
