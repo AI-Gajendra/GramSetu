@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GramSetu Profile &amp; Billing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11d493", // Bright Green
+                        "primary-dark": "#0ea673", // Darker Green for hover/active
+                        "accent": "#e67e22", // Earthy Orange
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#10221c",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2e26",
+                        "text-main": "#111816",
+                        "text-secondary": "#61897c",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main antialiased min-h-screen flex flex-col">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark px-6 py-3 shadow-sm">
+<div class="flex items-center gap-3">
+<div class="size-8 text-primary">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C12.95 4 4 12.95 4 24H44C44 12.95 35.05 4 24 4Z" fill="currentColor" fill-opacity="0.1"></path>
+<path d="M24 44C35.05 44 44 35.05 44 24H4C4 35.05 12.95 44 24 44Z" fill="currentColor"></path>
+<path d="M24 12C17.37 12 12 17.37 12 24H36C36 17.37 30.63 12 24 12Z" fill="white"></path>
+</svg>
+</div>
+<h2 class="text-text-main dark:text-white text-xl font-bold tracking-tight">GramSetu</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-text-secondary hover:text-primary transition-colors text-sm font-medium" href="#">Dashboard</a>
+<a class="text-primary text-sm font-bold" href="#">Profile</a>
+<a class="text-text-secondary hover:text-primary transition-colors text-sm font-medium" href="#">Beneficiaries</a>
+<a class="text-text-secondary hover:text-primary transition-colors text-sm font-medium" href="#">Schemes</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center rounded-full size-10 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors text-text-main dark:text-white relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-accent rounded-full border-2 border-surface-light dark:border-surface-dark"></span>
+</button>
+<div class="hidden sm:flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-700">
+<div class="text-right hidden lg:block">
+<p class="text-sm font-semibold text-text-main dark:text-white">Ramesh Kumar</p>
+<p class="text-xs text-text-secondary">Sarpanch</p>
+</div>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-primary" data-alt="Profile picture of Ramesh Kumar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDMD79Sk5Hs2VLjdjhuw5iMVdrJ_nYLzdc49VqCPJBmu9BroWJeEzY4-WZlufHPQ5rhadp6O4TQApZSLgs-r9cGZik_zur_YfpHLz5TRR42fYss1UqNNf55z4HoKnT6o4r5wXsJJvEIf7jY0kXY8NeIIlssuwvvPatVXPJG1mqRl2gYtNo6xKoZkqTYhgKPeTLG1agxBde-Flg_ASJvMNgKzXObN3X1T15kATtbMcHyCbc_A6ySCgAJVvpTxYvyfQ1y6C6a2rTK5WsS");'></div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Page Header -->
+<div class="mb-8">
+<h1 class="text-3xl font-black text-text-main dark:text-white tracking-tight">Manage Profile</h1>
+<p class="mt-2 text-text-secondary">Update your personal information and subscription details for your Gram Panchayat.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Profile & Billing -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- User Profile Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+<div class="relative group">
+<div class="bg-center bg-no-repeat bg-cover rounded-full w-32 h-32 border-4 border-white dark:border-gray-700 shadow-md" data-alt="Large profile picture of Ramesh Kumar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPhOod14EiyecHU7NOlmVsStBb_ae345nIDJWXbeBVDsjUtY1hp06poXTWXtLZi2OfEHP_r3VO1kYfyQI0aoxCFBa8-Gaz8WHvHPfbHO3VbAmpV8y0PVwjVuRoLeBRX9uSk24LZTy-RxryfmazaYM4gSDMM1IVFDdxLAV80PXEgXM9pdQHl1K5UHqrzrf6WpUehjSeLw1wqPbGMbLalitl9NA0Vs1tNwKZN0LQz3c7DeAfw5a-Ql3_tznkS8Wllwp3De3QakGKDYot");'></div>
+<button class="absolute bottom-0 right-0 bg-primary hover:bg-primary-dark text-white rounded-full p-2 shadow-lg transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+</div>
+<div class="flex flex-col flex-1 w-full text-center sm:text-left gap-1">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h2 class="text-2xl font-bold text-text-main dark:text-white">Ramesh Kumar</h2>
+<p class="text-primary font-medium">Gram Pradhan • ID: GP-2024-889</p>
+</div>
+<span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-semibold uppercase tracking-wider self-center sm:self-start">Verified</span>
+</div>
+<div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="flex items-center gap-3 text-text-secondary bg-background-light dark:bg-background-dark p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">call</span>
+<span>+91 98765 43210</span>
+</div>
+<div class="flex items-center gap-3 text-text-secondary bg-background-light dark:bg-background-dark p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<span>Varanasi District, UP</span>
+</div>
+<div class="flex items-center gap-3 text-text-secondary bg-background-light dark:bg-background-dark p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">translate</span>
+<span>Hindi (Primary), English</span>
+</div>
+<div class="flex items-center gap-3 text-text-secondary bg-background-light dark:bg-background-dark p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">mail</span>
+<span>ramesh.k@gramsetu.in</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Saved Forms Section -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-xl font-bold text-text-main dark:text-white">Saved Forms &amp; Documents</h2>
+<button class="text-primary hover:text-primary-dark font-medium text-sm flex items-center gap-1">
+                            View All <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="space-y-3">
+<!-- Form Item 1 -->
+<div class="flex items-center justify-between p-4 bg-background-light dark:bg-background-dark rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg text-red-600 dark:text-red-400">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div>
+<h3 class="font-semibold text-text-main dark:text-white group-hover:text-primary transition-colors">PM-KISAN Application Form</h3>
+<p class="text-sm text-text-secondary">Generated on Oct 15, 2023 • 2.4 MB</p>
+</div>
+</div>
+<button class="p-2 text-text-secondary hover:text-primary hover:bg-white dark:hover:bg-gray-700 rounded-full transition-all">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<!-- Form Item 2 -->
+<div class="flex items-center justify-between p-4 bg-background-light dark:bg-background-dark rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-blue-600 dark:text-blue-400">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<h3 class="font-semibold text-text-main dark:text-white group-hover:text-primary transition-colors">Soil Health Card Report</h3>
+<p class="text-sm text-text-secondary">Generated on Sep 28, 2023 • 1.1 MB</p>
+</div>
+</div>
+<button class="p-2 text-text-secondary hover:text-primary hover:bg-white dark:hover:bg-gray-700 rounded-full transition-all">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<!-- Form Item 3 -->
+<div class="flex items-center justify-between p-4 bg-background-light dark:bg-background-dark rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined">table_chart</span>
+</div>
+<div>
+<h3 class="font-semibold text-text-main dark:text-white group-hover:text-primary transition-colors">Beneficiary List - MNREGA</h3>
+<p class="text-sm text-text-secondary">Generated on Aug 10, 2023 • 4.8 MB</p>
+</div>
+</div>
+<button class="p-2 text-text-secondary hover:text-primary hover:bg-white dark:hover:bg-gray-700 rounded-full transition-all">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: B2B Billing & Stats -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Current Plan Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden">
+<!-- Decorative pattern -->
+<div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
+<div class="flex items-start justify-between mb-4 relative z-10">
+<div>
+<p class="text-sm font-semibold text-text-secondary uppercase tracking-wider">Current Plan</p>
+<h3 class="text-2xl font-bold text-text-main dark:text-white mt-1">Gram Panchayat</h3>
+</div>
+<div class="bg-primary/20 text-primary-dark dark:text-primary p-2 rounded-lg">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+</div>
+<div class="space-y-4 relative z-10">
+<div class="flex justify-between items-center text-sm">
+<span class="text-text-secondary">License Status</span>
+<span class="font-medium text-green-600">Active</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-text-secondary">Next Billing Date</span>
+<span class="font-medium text-text-main dark:text-white">Nov 01, 2023</span>
+</div>
+<div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium text-text-main dark:text-white">Active Users</span>
+<span class="text-xs font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-text-secondary">480 / 500</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+<div class="bg-primary h-2.5 rounded-full" style="width: 96%"></div>
+</div>
+<p class="text-xs text-text-secondary mt-2">You have almost reached your user limit.</p>
+</div>
+</div>
+</div>
+<!-- Upgrade CTA -->
+<div class="bg-gradient-to-br from-background-dark to-surface-dark dark:from-surface-dark dark:to-black rounded-xl p-6 shadow-lg text-white border border-gray-700 relative overflow-hidden">
+<div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" data-alt="Subtle geometric background pattern"></div>
+<div class="relative z-10">
+<div class="size-12 rounded-lg bg-accent/20 flex items-center justify-center mb-4 text-accent">
+<span class="material-symbols-outlined text-[28px]">rocket_launch</span>
+</div>
+<h3 class="text-xl font-bold mb-2">Upgrade to Premium API</h3>
+<p class="text-gray-300 text-sm mb-6 leading-relaxed">
+                            Unlock unlimited user accounts, advanced crop analytics, and priority voice support for your entire village.
+                        </p>
+<button class="w-full bg-accent hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
+                            Upgrade Now
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<p class="text-center text-xs text-gray-400 mt-3">Starting at ₹499/month</p>
+</div>
+</div>
+<!-- Support Section -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+<h3 class="font-bold text-text-main dark:text-white mb-4">Need Help?</h3>
+<div class="flex flex-col gap-3">
+<a class="flex items-center gap-3 p-3 rounded-lg hover:bg-background-light dark:hover:bg-background-dark transition-colors group" href="#">
+<div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-text-secondary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">headset_mic</span>
+</div>
+<span class="text-sm font-medium text-text-secondary group-hover:text-text-main dark:group-hover:text-white">Contact Support</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg hover:bg-background-light dark:hover:bg-background-dark transition-colors group" href="#">
+<div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-text-secondary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">quiz</span>
+</div>
+<span class="text-sm font-medium text-text-secondary group-hover:text-text-main dark:group-hover:text-white">FAQs &amp; Tutorials</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GramSetu AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2e7d32", 
+                        "primary-light": "#4caf50",
+                        "secondary": "#ff9800",
+                        "background-light": "#f1f5f3",
+                        "background-dark": "#0a1f14",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#162e22",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for chat area */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+        .dark .chat-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display flex flex-col h-screen overflow-hidden">
+<!-- Header -->
+<header class="flex-none bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between z-10 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="size-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">agriculture</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-primary dark:text-primary-light">GramSetu Assistant</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Rural Banking Companion</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<button class="flex items-center gap-2 px-4 py-2 bg-background-light dark:bg-background-dark rounded-full text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined text-lg">translate</span>
+<span>Hindi / English</span>
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</button>
+</div>
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-slate-600 dark:text-slate-300 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Chat Area -->
+<main class="flex-1 flex flex-col relative max-w-5xl mx-auto w-full h-full">
+<!-- Chat Messages Container -->
+<div class="flex-1 overflow-y-auto chat-scroll p-6 space-y-6 pb-32">
+<!-- Date Separator -->
+<div class="flex justify-center">
+<span class="px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full text-xs font-medium text-slate-500 dark:text-slate-400">Today</span>
+</div>
+<!-- Bot Message (Welcome) -->
+<div class="flex items-start gap-3 max-w-[80%]">
+<div class="size-10 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden border border-primary/20">
+<img alt="Friendly AI bot avatar" class="w-full h-full object-cover" data-alt="Friendly AI bot avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASoC_nodqGP9cYTtL9ldgjTPykGmNpPFoBaWLya6yJlpibEibwQogn2ZBKqrq_w7rXnASTaB7sS5j5msaX1moItf5e2DA_s5pQemS4lVEaD-d0mcGIaU7BA1HZI9bcuyxsHCTDWYGCipHCn2BRuNWhChniX5MkJ-JsAGe7fQsi8VDl_N25Nf3WcqKg9ipSSjFO3V6i2hbFMSyCVswIVmjx6xVbb7o92dIL-KvZasK8zt3T7O0C3tCAa5kp1gW2CHjtqj_4TvYvlFrP"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-xs text-slate-500 dark:text-slate-400 ml-1">GramSetu Bot • 10:00 AM</span>
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-800 relative group">
+<p class="text-slate-800 dark:text-slate-200 leading-relaxed">
+                            Namaste! 🙏 How can I help you with your crops or banking needs today?
+                        </p>
+<button class="absolute -right-12 top-2 p-2 rounded-full bg-white dark:bg-gray-700 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity text-primary">
+<span class="material-symbols-outlined text-xl">volume_up</span>
+</button>
+</div>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex items-start gap-3 max-w-[80%] ml-auto flex-row-reverse">
+<div class="size-10 rounded-full bg-orange-100 flex-shrink-0 flex items-center justify-center overflow-hidden border border-orange-200">
+<img alt="Indian farmer portrait" class="w-full h-full object-cover" data-alt="Indian farmer portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrNP1wF-cj_fZTV_ZDpF1yiTzUR708HY3HfZLeBYncBNJanjuaszqSTKDnnw9azHF7fzuR7_NvUKEHHzXNFM8_3FoaQVFwzJ_WLpzZ-pE5pbzJFAFwoUd-euxVU3cGIk1-Nz0zAdBI2EZ4fFf2ZP9GUvmdcaAyM8k7wF65-l2onQJgv_PYcasyHi6_K3KsBt19K-HH4XrtUQ7eVch5Kzs_wuU3D8r4cka7RnpotgZn9vHKRa2KCjzi1qF9N1lPRQIuAsbBSBMOxqCd"/>
+</div>
+<div class="flex flex-col gap-1 items-end">
+<span class="text-xs text-slate-500 dark:text-slate-400 mr-1">You • 10:02 AM</span>
+<div class="bg-primary text-white p-4 rounded-2xl rounded-tr-none shadow-md">
+<p class="leading-relaxed">
+                            I need help applying for the Kisan Credit Card. Can you help me fill the form?
+                        </p>
+</div>
+</div>
+</div>
+<!-- Bot Message (Response with PDF) -->
+<div class="flex items-start gap-3 max-w-[80%]">
+<div class="size-10 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden border border-primary/20">
+<img alt="Friendly AI bot avatar" class="w-full h-full object-cover" data-alt="Friendly AI bot avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC43vz3VAaY_y74KvRF-DdZ_GTMCiuPO1lHT7uA0NCY7lhAz8im6z6D0nH0dIO4bH1SAi-xMSFlrgvReOqE7OAAWDpdrr3YbnHLERGS16-9QFKF6juzIlMYLY5F4i1mNArmW7SW58_zFiwZH8fCSXxb1uUGs19eP_3B1_Q2vPqIjaKYo_7UO3AiPoDEpkid-B2taP20rGXN426VbZfIti0Hho_C-Q3p-BDv63QesiULyaaqnANbuGry9l2wGUMoCbL4ZYC0SkzL5JJ5"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-xs text-slate-500 dark:text-slate-400 ml-1">GramSetu Bot • 10:03 AM</span>
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-800 relative group">
+<p class="text-slate-800 dark:text-slate-200 leading-relaxed mb-3">
+                            Here is the filled form for you based on your profile. Please review it and sign where indicated.
+                        </p>
+<!-- PDF Card -->
+<div class="flex items-center gap-4 p-3 bg-background-light dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary/50 transition-colors">
+<div class="size-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+<span class="material-symbols-outlined text-3xl">picture_as_pdf</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-medium text-slate-900 dark:text-slate-100 truncate">Kisan_Credit_Card_Filled.pdf</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">2.4 MB • PDF Document</p>
+</div>
+<button class="size-10 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<button class="absolute -right-12 top-2 p-2 rounded-full bg-white dark:bg-gray-700 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity text-primary">
+<span class="material-symbols-outlined text-xl">volume_up</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bot Message (Audio Playing State) -->
+<div class="flex items-start gap-3 max-w-[80%]">
+<div class="size-10 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center overflow-hidden border border-primary/20">
+<img alt="Friendly AI bot avatar" class="w-full h-full object-cover" data-alt="Friendly AI bot avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDe3pF5kyrsVP0zsbLsAiW0XlbIiw5mBOCLtbMM8uX6PdQ5JAOXNpTfPJ2Gobl8GN1FGUP6Y-3S0-8O_c29GesfcHuk7cTvZIBmtenMjFBPLyhsAI536FotfPbnmpaMtyd0su4eECiXwKdtJFAR87roGXXwqNRxE3KP3AaPPOq5mfHezpq5DqyXK1ZfgOqw0gDJ5A8GktN8FeUGcYqtCgdPfJ2rRDEMl4zp4sJaVbEENpzg4-BIpj44Y8rr_Me997w3hEjBxJVKBway"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-xs text-slate-500 dark:text-slate-400 ml-1">GramSetu Bot • Just now</span>
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-3">
+<button class="size-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary-light transition-colors">
+<span class="material-symbols-outlined">pause</span>
+</button>
+<div class="flex-1 flex flex-col gap-1 min-w-[200px]">
+<div class="h-8 flex items-center gap-0.5 justify-center px-2">
+<!-- Fake Audio Waveform -->
+<div class="w-1 h-3 bg-primary rounded-full animate-pulse"></div>
+<div class="w-1 h-5 bg-primary rounded-full animate-pulse delay-75"></div>
+<div class="w-1 h-8 bg-primary rounded-full animate-pulse delay-100"></div>
+<div class="w-1 h-4 bg-primary rounded-full animate-pulse delay-150"></div>
+<div class="w-1 h-6 bg-primary rounded-full animate-pulse delay-200"></div>
+<div class="w-1 h-3 bg-primary rounded-full animate-pulse delay-75"></div>
+<div class="w-1 h-5 bg-primary/40 rounded-full"></div>
+<div class="w-1 h-2 bg-primary/40 rounded-full"></div>
+<div class="w-1 h-4 bg-primary/40 rounded-full"></div>
+<div class="w-1 h-2 bg-primary/40 rounded-full"></div>
+</div>
+<div class="flex justify-between text-[10px] text-slate-400 font-medium px-1">
+<span>0:12</span>
+<span>0:45</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Interaction Area -->
+<div class="absolute bottom-0 left-0 w-full bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-4 pb-6 z-20">
+<div class="max-w-3xl mx-auto flex flex-col items-center gap-4">
+<!-- Helper Text -->
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse">
+                    Listening...
+                </p>
+<div class="flex items-center w-full gap-4 justify-center">
+<!-- Keyboard Mode Button -->
+<button aria-label="Switch to keyboard" class="size-12 rounded-full bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors border border-gray-200 dark:border-gray-700">
+<span class="material-symbols-outlined">keyboard</span>
+</button>
+<!-- Main Mic Button -->
+<button class="relative group size-20 rounded-full bg-secondary hover:bg-orange-600 active:scale-95 transition-all duration-200 shadow-lg shadow-orange-500/30 flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 bg-white/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+<span class="material-symbols-outlined text-4xl text-white">mic</span>
+</button>
+<!-- Upload/Attachment Button -->
+<button aria-label="Attach file" class="size-12 rounded-full bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors border border-gray-200 dark:border-gray-700">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+</div>
+<p class="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                    Press and hold to speak
+                </p>
+</div>
+</div>
+</main>
+</body></html>
