@@ -7,16 +7,17 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
-    Activity, Bell, Pencil, BadgeCheck, Phone, MapPin,
-    Languages, Mail, ArrowRight, Tractor, LogOut,
+    Activity, Bell, Pencil, BadgeCheck,
+    Mail, ArrowRight, Tractor, LogOut,
     Loader2
 } from "lucide-react";
 
 interface UserProfile {
+    id?: string;
     name?: string;
-    phone?: string;
-    language?: string;
-    location?: string;
+    email?: string;
+    credit?: number;
+    is_verified?: boolean;
 }
 
 function DashboardContent() {
@@ -28,10 +29,10 @@ function DashboardContent() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                if (user?.phone) {
-                    const res = await api.get(`/api/user-profile/${user.phone}`);
-                    if (res.data?.success && res.data?.data) {
-                        setProfile(res.data.data);
+                if (user) {
+                    const res = await api.post(`/api/auth/getuser`);
+                    if (res.data?.user) {
+                        setProfile(res.data.user);
                     }
                 }
             } catch (err) {
@@ -49,10 +50,9 @@ function DashboardContent() {
     };
 
     const displayName = profile?.name || user?.name || user?.email?.split("@")[0] || "User";
-    const displayEmail = user?.email || "—";
-    const displayPhone = profile?.phone || user?.phone || "Not set";
-    const displayLocation = profile?.location || "Not set";
-    const displayLanguage = profile?.language || "Not set";
+    const displayEmail = profile?.email || user?.email || "—";
+    const displayCredits = profile?.credit !== undefined ? profile.credit : 5;
+    const isVerified = profile?.is_verified ?? false;
 
     return (
         <div className="bg-background-light dark:bg-[#0a1511] font-display text-text-main antialiased min-h-screen flex flex-col relative overflow-hidden">
@@ -125,8 +125,8 @@ function DashboardContent() {
                                             <h2 className="text-3xl font-black text-text-main dark:text-white tracking-tight">{displayName}</h2>
                                             <p className="text-primary font-bold tracking-wide mt-1">{displayEmail}</p>
                                         </div>
-                                        <span className="px-4 py-1.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-full text-xs font-bold uppercase tracking-widest self-center sm:self-start flex items-center gap-1 border border-green-200 dark:border-green-500/30">
-                                            <BadgeCheck className="h-4 w-4" /> Verified
+                                        <span className={`px-4 py-1.5 ${isVerified ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/30'} rounded-full text-xs font-bold uppercase tracking-widest self-center sm:self-start flex items-center gap-1 border`}>
+                                            <BadgeCheck className="h-4 w-4" /> {isVerified ? "Verified" : "Unverified"}
                                         </span>
                                     </div>
                                     <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -135,16 +135,8 @@ function DashboardContent() {
                                             <span className="font-medium truncate">{displayEmail}</span>
                                         </div>
                                         <div className="flex items-center gap-3 text-text-secondary dark:text-gray-300 bg-gray-50 dark:bg-[#11241d] p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-colors">
-                                            <Phone className="text-primary h-5 w-5 flex-shrink-0" />
-                                            <span className="font-medium">{displayPhone}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-text-secondary dark:text-gray-300 bg-gray-50 dark:bg-[#11241d] p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-colors">
-                                            <MapPin className="text-primary h-5 w-5 flex-shrink-0" />
-                                            <span className="font-medium">{displayLocation}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-text-secondary dark:text-gray-300 bg-gray-50 dark:bg-[#11241d] p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-colors">
-                                            <Languages className="text-primary h-5 w-5 flex-shrink-0" />
-                                            <span className="font-medium">{displayLanguage}</span>
+                                            <Activity className="text-primary h-5 w-5 flex-shrink-0" />
+                                            <span className="font-medium">{displayCredits} AI Credits Left</span>
                                         </div>
                                     </div>
                                 </div>

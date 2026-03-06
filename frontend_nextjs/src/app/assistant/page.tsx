@@ -7,7 +7,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import {
     ArrowLeft, Languages, ChevronDown, MoreVertical,
     Bot, FileText, Download, CheckCheck, Volume2,
-    Keyboard, Mic, Paperclip, Send, Play, Pause, User
+    Keyboard, Mic, Paperclip, Send, Play, Pause, User,
+    Menu, Plus, Search, Image as ImageIcon, MessageSquare, Trash2
 } from "lucide-react";
 
 interface Message {
@@ -19,12 +20,22 @@ interface Message {
     pdfUrl?: string;
 }
 
+interface ChatSession {
+    id: string;
+    conversation_title: string;
+    updated_at: string;
+}
+
 function AssistantContent() {
     const [messages, setMessages] = useState<Message[]>([]);
+    const [chats, setChats] = useState<ChatSession[]>([]);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [isLoadingChat, setIsLoadingChat] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        // Default initial message
         setMessages([
             {
                 id: "1",
@@ -33,7 +44,19 @@ function AssistantContent() {
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }
         ]);
+        fetchChats();
     }, []);
+
+    const fetchChats = async () => {
+        try {
+            const res = await api.get("/api/chat/my-chats");
+            if (Array.isArray(res.data)) {
+                setChats(res.data);
+            }
+        } catch (err) {
+            console.error("Failed to load history:", err);
+        }
+    };
     const [isKeyboardMode, setIsKeyboardMode] = useState(false);
     const [textInput, setTextInput] = useState("");
     const [isRecording, setIsRecording] = useState(false);
@@ -87,21 +110,87 @@ function AssistantContent() {
     }, [messages]);
 
     useEffect(() => {
-        const createSession = async () => {
-            try {
-                const res = await api.post("/api/chat/create");
-                const id = res.data?.chat?.id || res.data?.chatId || res.data?.id;
-                if (id) {
-                    setChatId(id);
-                } else {
-                    console.warn("Chat session created but no ID returned:", res.data);
+        // Only run createSession if we don't have a chatId yet and are on the default screen
+        if (!chatId && messages.length === 1 && messages[0].id === "1") {
+            const createSession = async () => {
+                try {
+                    const res = await api.post("/api/chat/create");
+                    const id = res.data?.chat?.id || res.data?.chatId || res.data?.id;
+                    if (id) {
+                        setChatId(id);
+                        fetchChats(); // Refresh sidebar to show the new chat
+                    } else {
+                        console.warn("Chat session created but no ID returned:", res.data);
+                    }
+                } catch (err: any) {
+                    console.error("[CHAT] Create FAILED:", err?.response?.status, err?.response?.data || err.message);
                 }
-            } catch (err: any) {
-                console.error("[CHAT] Create FAILED:", err?.response?.status, err?.response?.data || err.message);
+            };
+            createSession();
+        }
+    }, [chatId]);
+
+    const handleNewChat = async () => {
+        setIsLoadingChat(true);
+        try {
+            const res = await api.post("/api/chat/create");
+            const newId = res.data?.chat?.id || res.data?.chatId || res.data?.id;
+            setChatId(newId);
+            setMessages([
+                {
+                    id: Date.now().toString(),
+                    sender: "bot",
+                    text: "Namaste! 🙏 How can I help you with your crops or banking needs today?",
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }
+            ]);
+            fetchChats();
+            setSidebarOpen(false);
+        } catch (err) {
+            console.error("Error creating new chat:", err);
+        } finally {
+            setIsLoadingChat(false);
+        }
+    };
+
+    const handleSelectChat = async (id: string) => {
+        if (chatId === id) {
+            setSidebarOpen(false);
+            return;
+        }
+        setIsLoadingChat(true);
+        try {
+            const res = await api.get(`/api/chat/${id}`);
+            const chatObj = res.data;
+            setChatId(id);
+            if (chatObj && chatObj.messages) {
+                const formattedOptions = chatObj.messages.map((m: any) => ({
+                    id: m.id,
+                    sender: m.role === 'user' ? 'user' : 'bot',
+                    text: m.content || "",
+                    timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }));
+                // Ensure at least the initial message is there if empty
+                if (formattedOptions.length === 0) {
+                    setMessages([
+                        {
+                            id: Date.now().toString(),
+                            sender: "bot",
+                            text: "Namaste! 🙏 How can I help you with your crops or banking needs today?",
+                            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        }
+                    ]);
+                } else {
+                    setMessages(formattedOptions);
+                }
             }
-        };
-        createSession();
-    }, []);
+            setSidebarOpen(false);
+        } catch (err) {
+            console.error("Failed to load chat:", err);
+        } finally {
+            setIsLoadingChat(false);
+        }
+    };
 
     const handleSendText = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -295,23 +384,98 @@ function AssistantContent() {
     };
 
     return (
-        <div className="bg-background-light dark:bg-[#06150d] text-slate-900 dark:text-slate-100 font-display flex flex-col overflow-hidden relative" style={{ height: '100dvh' }}>
-            <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }}></div>
-            <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
+        <div className="bg-white dark:bg-[#212121] text-slate-900 dark:text-slate-100 font-display flex overflow-hidden relative" style={{ height: '100dvh' }}>
+            
+            {/* Sidebar Overlay (Mobile) */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <div className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#171717] text-white flex flex-col transition-transform duration-300 ease-in-out transform md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-3 flex items-center justify-between">
+                    <button 
+                        onClick={handleNewChat}
+                        className="flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#202123] transition-colors text-sm font-medium"
+                    >
+                        <Bot className="h-5 w-5 opacity-70" />
+                        <span className="flex-1 text-left">New chat</span>
+                        <Plus className="h-5 w-5 opacity-70" />
+                    </button>
+                    <button 
+                        className="md:hidden ml-2 p-2 rounded-xl border border-white/20 hover:bg-white/10"
+                        onClick={() => setSidebarOpen(false)}
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                    </button>
+                </div>
+                
+                <div className="px-3 flex flex-col gap-1 mt-2">
+                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#202123] transition-colors text-sm font-medium text-white/90">
+                        <Search className="h-5 w-5 opacity-70" />
+                        Search chats
+                    </button>
+                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#202123] transition-colors text-sm font-medium text-white/90">
+                        <ImageIcon className="h-5 w-5 opacity-70" />
+                        Images
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto mt-6 px-3 no-scrollbar pb-4 gap-1 flex flex-col">
+                    <h3 className="text-xs font-semibold text-white/50 px-3 pb-2 uppercase tracking-wide">Your chats</h3>
+                    {chats.map(chat => (
+                        <button
+                            key={chat.id}
+                            onClick={() => handleSelectChat(chat.id)}
+                            className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg text-sm transition-colors group relative
+                                ${chatId === chat.id ? 'bg-[#343541] text-white' : 'text-white/80 hover:bg-[#2A2B32]'}`}
+                        >
+                            <MessageSquare className={`h-4 w-4 shrink-0 ${chatId === chat.id ? 'opacity-100 text-primary' : 'opacity-60'}`} />
+                            <div className="flex-1 min-w-0">
+                                <span className="block truncate font-medium">{chat.conversation_title || "New Chat"}</span>
+                            </div>
+                            {chatId === chat.id && (
+                                <div className="absolute right-2 opacity-0 group-hover:opacity-100 flex items-center transition-opacity">
+                                    <Trash2 className="h-4 w-4 text-white/60 hover:text-red-400 shrink-0" />
+                                </div>
+                            )}
+                        </button>
+                    ))}
+                    {chats.length === 0 && !isLoadingChat && (
+                        <p className="text-xs text-center text-white/40 mt-4 px-4 italic">No previous chats. Start by saying hello!</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col relative w-full z-10 min-w-0">
+                <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }}></div>
+                <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
 
             <header className="flex-none glass dark:glass-dark border-b border-gray-200/50 dark:border-white/5 py-2 px-3 sm:py-3 sm:px-6 flex items-center justify-between z-20 shadow-sm relative">
-                <Link href="/dashboard" className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity group">
-                    <div className="size-10 sm:size-12 bg-white dark:bg-gray-800 shadow-md rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                        <ArrowLeft className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h1 className="text-base sm:text-xl font-black tracking-tight text-forest-green dark:text-white flex items-center gap-2">
-                            GramSetu AI
-                            <span className="size-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(17,212,147,0.8)]"></span>
-                        </h1>
-                        <p className="text-xs text-slate-500 dark:text-gray-400 font-semibold tracking-wide uppercase mt-0.5">Always here to help</p>
-                    </div>
-                </Link>
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <button 
+                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors md:hidden"
+                        onClick={() => setSidebarOpen(true)}
+                    >
+                        <Menu className="h-6 w-6" />
+                    </button>
+                    <Link href="/dashboard" className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity group">
+                        <div className="size-10 sm:size-12 bg-white dark:bg-gray-800 shadow-md rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-base sm:text-xl font-black tracking-tight text-forest-green dark:text-white flex items-center gap-2">
+                                GramSetu AI
+                                <span className="size-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(17,212,147,0.8)]"></span>
+                            </h1>
+                            <p className="text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 font-semibold tracking-wide uppercase mt-0.5">Always here to help</p>
+                        </div>
+                    </Link>
+                </div>
                 <div className="flex items-center gap-2 sm:gap-4">
                     <div className="relative group hidden sm:block">
                         <button className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700">
@@ -326,13 +490,22 @@ function AssistantContent() {
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col relative max-w-4xl mx-auto w-full z-10 min-h-0">
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-8 space-y-4 sm:space-y-8 pb-4 sm:pb-6 scroll-smooth no-scrollbar">
-                    <div className="flex justify-center my-6">
-                        <span className="px-5 py-2 glass dark:glass-dark shadow-sm border border-gray-200 dark:border-white/10 rounded-full text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest backdrop-blur-md">
-                            Today • Conversation Secured
-                        </span>
+            <main className="flex-1 flex flex-col relative w-full z-10 min-h-0">
+                {isLoadingChat ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="flex items-center gap-3">
+                            <div className="size-5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="size-5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="size-5 rounded-full bg-primary/20 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
                     </div>
+                ) : (
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto px-2 sm:px-[15%] space-y-4 sm:space-y-8 pb-4 scroll-smooth no-scrollbar pt-4">
+                        <div className="flex justify-center my-4 sm:my-6">
+                            <span className="px-5 py-2 glass dark:glass-dark shadow-sm border border-gray-200 dark:border-white/10 rounded-full text-[10px] sm:text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest backdrop-blur-md">
+                                Conversation Secured
+                            </span>
+                        </div>
 
                     {messages.map((msg) => (
                         <div key={msg.id} className={`flex items-end gap-2 sm:gap-3 max-w-[95%] sm:max-w-[75%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''} group`}>
@@ -428,9 +601,10 @@ function AssistantContent() {
                             </div>
                         </div>
                     )}
-                </div>
+                    </div>
+                )}
 
-                <div className="flex-none px-2 sm:px-10 py-2 sm:py-3 z-30" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+                <div className="flex-none px-2 sm:px-[5%] w-full max-w-4xl mx-auto py-2 sm:py-3 z-30" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
                     <div className="max-w-3xl mx-auto flex flex-col items-center gap-2 sm:gap-4">
                         {!isKeyboardMode && (
                             <div className="relative">
@@ -510,6 +684,7 @@ function AssistantContent() {
                     </div>
                 </div>
             </main>
+            </div>
         </div>
     );
 }
