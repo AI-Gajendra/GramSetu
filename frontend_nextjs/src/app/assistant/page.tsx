@@ -20,14 +20,20 @@ interface Message {
 }
 
 function AssistantContent() {
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            sender: "bot",
-            text: "Namaste! 🙏 How can I help you with your crops or banking needs today?",
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        setMessages([
+            {
+                id: "1",
+                sender: "bot",
+                text: "Namaste! 🙏 How can I help you with your crops or banking needs today?",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+        ]);
+    }, []);
     const [isKeyboardMode, setIsKeyboardMode] = useState(false);
     const [textInput, setTextInput] = useState("");
     const [isRecording, setIsRecording] = useState(false);
@@ -110,12 +116,19 @@ function AssistantContent() {
 
             const res = await api.post("/api/chat/send", formData);
 
+            let textAudioUrl: string | undefined;
+            if (res.data.audio) {
+                textAudioUrl = `data:audio/mp3;base64,${res.data.audio}`;
+            } else if (res.data.audioUrl) {
+                textAudioUrl = res.data.audioUrl;
+            }
+
             const responseMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 sender: 'bot',
                 text: res.data.aiMessage || res.data.response || res.data.message || "Received your message but couldn't parse the response.",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                audioUrl: res.data.audio || res.data.audioUrl || undefined,
+                audioUrl: textAudioUrl,
                 pdfUrl: res.data.pdfUrl || undefined
             };
             setMessages(prev => [...prev, responseMsg]);
@@ -295,7 +308,7 @@ function AssistantContent() {
             </header>
 
             <main className="flex-1 flex flex-col relative max-w-4xl mx-auto w-full z-10 min-h-0">
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-8 space-y-4 sm:space-y-8 pb-4 sm:pb-6 scroll-smooth">
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-8 space-y-4 sm:space-y-8 pb-4 sm:pb-6 scroll-smooth no-scrollbar">
                     <div className="flex justify-center my-6">
                         <span className="px-5 py-2 glass dark:glass-dark shadow-sm border border-gray-200 dark:border-white/10 rounded-full text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest backdrop-blur-md">
                             Today • Conversation Secured
@@ -354,13 +367,21 @@ function AssistantContent() {
                                                     : <Play className="h-4 w-4 sm:h-5 sm:w-5 ml-0.5" />}
                                             </button>
                                             <div className="flex-1 flex items-center gap-1">
-                                                {[...Array(12)].map((_, i) => (
-                                                    <div
-                                                        key={i}
-                                                        className={`flex-1 rounded-full transition-all duration-300 ${playingAudioId === msg.id ? 'animate-pulse' : ''} ${msg.sender === 'user' ? 'bg-white/50' : 'bg-primary/30'}`}
-                                                        style={{ height: `${8 + Math.sin(i * 0.8) * 10 + Math.random() * 6}px` }}
-                                                    />
-                                                ))}
+                                                {[...Array(12)].map((_, i) => {
+                                                    // Use a deterministic pseudo-random sequence based on msg.id and index
+                                                    // so it always renders the same on server and client
+                                                    const seed = msg.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + i;
+                                                    const pseudoRandom = (Math.sin(seed * 9999) + 1) / 2;
+                                                    const height = 8 + Math.sin(i * 0.8) * 10 + pseudoRandom * 6;
+                                                    
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className={`flex-1 rounded-full transition-all duration-300 ${playingAudioId === msg.id ? 'animate-pulse' : ''} ${msg.sender === 'user' ? 'bg-white/50' : 'bg-primary/30'}`}
+                                                            style={{ height: `${height}px` }}
+                                                        />
+                                                    );
+                                                })}
                                             </div>
                                             <span className={`text-[10px] font-bold flex-shrink-0 ${msg.sender === 'user' ? 'text-white/60' : 'text-slate-400'}`}>
                                                 {msg.sender === 'user' ? '🎤' : '🔊'}
