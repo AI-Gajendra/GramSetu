@@ -7,7 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import {
     ArrowLeft, Languages, ChevronDown, MoreVertical,
     Bot, FileText, Download, CheckCheck, Volume2,
-    Keyboard, Mic, Paperclip, Send, Play, Pause
+    Keyboard, Mic, Paperclip, Send, Play, Pause, User
 } from "lucide-react";
 
 interface Message {
@@ -37,6 +37,7 @@ function AssistantContent() {
     const [isKeyboardMode, setIsKeyboardMode] = useState(false);
     const [textInput, setTextInput] = useState("");
     const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
     const [sending, setSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const [chatId, setChatId] = useState<string | null>(null);
@@ -44,6 +45,24 @@ function AssistantContent() {
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isRecording) {
+            interval = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+        } else {
+            setRecordingTime(0);
+        }
+        return () => clearInterval(interval);
+    }, [isRecording]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const playAudio = (audioUrl: string, msgId: string) => {
         if (playingAudioId === msgId) {
@@ -301,9 +320,9 @@ function AssistantContent() {
                             <ChevronDown className="h-4 w-4" />
                         </button>
                     </div>
-                    <button className="size-12 rounded-full hover:bg-white dark:hover:bg-gray-800 text-slate-600 dark:text-slate-300 transition-all shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-gray-700 flex items-center justify-center">
-                        <MoreVertical className="h-6 w-6" />
-                    </button>
+                    <Link href="/dashboard" className="size-10 sm:size-12 rounded-full hover:bg-white dark:hover:bg-gray-800 text-slate-600 dark:text-slate-300 transition-all shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-gray-700 flex items-center justify-center group/profile">
+                        <User className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover/profile:scale-110 group-hover/profile:text-primary" />
+                    </Link>
                 </div>
             </header>
 
@@ -418,8 +437,13 @@ function AssistantContent() {
                                 {isRecording && (
                                     <>
                                         <div className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-60 scale-150"></div>
-                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-red-500/30 animate-pulse">
-                                            Listening... Speak now
+                                        <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                                            <div className="whitespace-nowrap bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-red-500/30 animate-pulse mb-1">
+                                                Listening... Speak now
+                                            </div>
+                                            <span className="text-sm font-black text-slate-700 dark:text-white/90 drop-shadow-sm font-mono">
+                                                {formatTime(recordingTime)}
+                                            </span>
                                         </div>
                                     </>
                                 )}
