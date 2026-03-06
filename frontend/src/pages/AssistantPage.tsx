@@ -31,6 +31,8 @@ export default function AssistantPage() {
     const [sending, setSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const [chatId, setChatId] = useState<string | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -42,10 +44,16 @@ export default function AssistantPage() {
         const createSession = async () => {
             try {
                 const res = await api.post("/api/chat/create");
-                setChatId(res.data.chatId || res.data.id || "dummy_chat_id");
-            } catch (err) {
-                console.warn("Could not create chat session immediately.", err);
-                setChatId("fallback_chat_id_" + Math.random().toString());
+                const id = res.data?.chat?.id || res.data?.chatId || res.data?.id;
+                console.log("[CHAT] Create response:", JSON.stringify(res.data), "| Extracted ID:", id);
+                if (id) {
+                    setChatId(id);
+                } else {
+                    console.warn("Chat session created but no ID returned:", res.data);
+                }
+            } catch (err: any) {
+                console.error("[CHAT] Create FAILED:", err?.response?.status, err?.response?.data || err.message);
+                // Don't set a fake chatId — let the user know
             }
         };
         createSession();
@@ -54,6 +62,17 @@ export default function AssistantPage() {
     const handleSendText = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!textInput.trim() || sending) return;
+
+        if (!chatId) {
+            const errorMsg: Message = {
+                id: Date.now().toString(),
+                sender: 'bot',
+                text: "⚠️ Chat session not available. Please make sure you're logged in with a valid account and try refreshing the page.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, errorMsg]);
+            return;
+        }
 
         const newMsg: Message = {
             id: Date.now().toString(),
@@ -67,27 +86,141 @@ export default function AssistantPage() {
 
         try {
             const formData = new FormData();
-            formData.append("chatId", chatId || Date.now().toString());
+            formData.append("chatId", chatId);
             formData.append("message", newMsg.text);
 
-            const res = await api.post("/api/chat/send", formData, {
-                headers: { "Content-Type": "multipart/form-data" }
-            });
+            console.log("[CHAT] Sending message:", newMsg.text, "| chatId:", chatId);
+            const res = await api.post("/api/chat/send", formData);
+
+            // Backend returns: { success, userMessage, aiMessage, audio }
             const responseMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 sender: 'bot',
-                text: res.data.response || res.data.message || "I received your message, but could not parse my backend response properly.",
+                text: res.data.aiMessage || res.data.response || res.data.message || "Received your message but couldn't parse the response.",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                audioUrl: res.data.audioUrl || undefined,
+                audioUrl: res.data.audio || res.data.audioUrl || undefined,
                 pdfUrl: res.data.pdfUrl || undefined
             };
             setMessages(prev => [...prev, responseMsg]);
         } catch (err: any) {
-            console.error(err);
+            console.error("Chat send error:", err?.response?.data || err.message);
+            const errText = err?.response?.status === 401
+                ? "🔒 Your session has expired. Please log in again."
+                : err?.response?.data?.error || err?.response?.data?.message || "I'm having trouble connecting to the AI service. Please try again.";
             const responseMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 sender: 'bot',
-                text: "I am having trouble connecting to the backend. Please try again later.",
+                text: errText,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, responseMsg]);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const startRecording = async () => {
+        if (!chatId) {
+            const errorMsg: Message = {
+                id: Date.now().toString(),
+                sender: 'bot',
+                text: "⚠️ Chat session not available. Please make sure you're logged in and try refreshing.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, errorMsg]);
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+            });
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    audioChunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                // Stop all mic tracks
+                stream.getTracks().forEach(track => track.stop());
+
+                const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+                if (audioBlob.size > 0) {
+                    sendAudio(audioBlob);
+                }
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (err) {
+            console.error("Mic access error:", err);
+            const errorMsg: Message = {
+                id: Date.now().toString(),
+                sender: 'bot',
+                text: "🎤 Microphone access denied. Please allow microphone permission in your browser settings.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+    };
+
+    const sendAudio = async (audioBlob: Blob) => {
+        const userMsg: Message = {
+            id: Date.now().toString(),
+            sender: 'user',
+            text: "🎤 Voice message sent...",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, userMsg]);
+        setSending(true);
+
+        try {
+            const formData = new FormData();
+            formData.append("chatId", chatId!);
+            formData.append("message", "");
+            formData.append("audio", audioBlob, "recording.webm");
+
+            const res = await api.post("/api/chat/send", formData);
+
+            // Build audio data URL if backend returned base64 audio from Polly
+            let audioDataUrl: string | undefined;
+            if (res.data.audio) {
+                audioDataUrl = `data:audio/mp3;base64,${res.data.audio}`;
+            }
+
+            const responseMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                sender: 'bot',
+                text: res.data.aiMessage || "I heard you, but couldn't generate a text response.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                audioUrl: audioDataUrl
+            };
+            setMessages(prev => [...prev, responseMsg]);
+
+            // Auto-play AI audio response
+            if (audioDataUrl) {
+                const audio = new Audio(audioDataUrl);
+                audio.play().catch(err => console.warn("Auto-play blocked:", err));
+            }
+        } catch (err: any) {
+            console.error("Voice send error:", err?.response?.data || err.message);
+            const errText = err?.response?.data?.error || err?.response?.data?.message || "Voice message failed to send. Please try again.";
+            const responseMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                sender: 'bot',
+                text: errText,
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
             setMessages(prev => [...prev, responseMsg]);
@@ -98,12 +231,9 @@ export default function AssistantPage() {
 
     const handleMicInteract = () => {
         if (isRecording) {
-            setIsRecording(false);
+            stopRecording();
         } else {
-            setIsRecording(true);
-            setTimeout(() => {
-                setIsRecording(false);
-            }, 3000);
+            startRecording();
         }
     };
 

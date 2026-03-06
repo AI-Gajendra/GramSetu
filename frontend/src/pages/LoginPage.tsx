@@ -1,38 +1,95 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import { Tractor, Lock, Mail, Key, ArrowRight } from "lucide-react";
+import { Tractor, Lock, Mail, Key, ArrowRight, ShieldCheck, ArrowLeft } from "lucide-react";
+
+type AuthStep = "credentials" | "otp";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [otp, setOtp] = useState("");
     const [isLogin, setIsLogin] = useState(true);
+    const [step, setStep] = useState<AuthStep>("credentials");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
 
-    const handleAuth = async (e: React.FormEvent) => {
+    // If already logged in, skip login page
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate("/assistant", { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+
+    // Step 1: Submit email + password → backend sends OTP to email
+    const handleCredentials = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccessMsg(null);
         try {
             const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
-            const response = await api.post(endpoint, {
-                email,
-                password
-            });
-            // Assuming response data contains token and user object
-            const token = response.data?.token || "dummy-token-for-mvp";
-            const user = response.data?.user || { email };
-            login(token, user);
-            navigate("/assistant");
+            const response = await api.post(endpoint, { email, password });
+            setSuccessMsg(response.data?.message || "OTP sent to your email!");
+            setStep("otp");
         } catch (err: any) {
-            setError(err.response?.data?.message || err.response?.data?.error || "Authentication failed. Please check your credentials.");
+            setError(err.response?.data?.message || err.response?.data?.error || "Something went wrong. Please try again.");
         } finally {
             setLoading(false);
         }
+    };
+
+    // Step 2: Submit OTP → backend verifies and returns JWT
+    const handleOtpVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            const endpoint = isLogin ? "/api/auth/login-verify" : "/api/auth/register-verify";
+            const response = await api.post(endpoint, { email, otp });
+            const token = response.data?.token;
+            const user = response.data?.user || { email };
+            if (token) {
+                login(token, user);
+                navigate("/assistant");
+            } else {
+                setError("Verification successful but no token received. Please try logging in.");
+                setStep("credentials");
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.response?.data?.error || "OTP verification failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Resend OTP
+    const handleResendOtp = async () => {
+        setLoading(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+            await api.post(endpoint, { email, password });
+            setSuccessMsg("A new OTP has been sent to your email!");
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to resend OTP.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Go back to credentials step
+    const handleBack = () => {
+        setStep("credentials");
+        setOtp("");
+        setError(null);
+        setSuccessMsg(null);
     };
 
     return (
@@ -82,89 +139,167 @@ export default function LoginPage() {
                     <div className="w-full max-w-[460px] flex flex-col relative group perspective">
                         <div className="absolute -inset-0.5 bg-gradient-to-b from-primary/30 to-accent/30 rounded-[2.5rem] blur opacity-50 z-0"></div>
                         <div className="glass dark:glass-dark rounded-[2rem] p-10 w-full relative z-10 shadow-2xl transition-all">
-                            <div className="text-center mb-10">
-                                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl border border-primary/20 flex items-center justify-center mb-6 text-primary shadow-inner">
-                                    <Lock className="h-8 w-8" />
-                                </div>
-                                <h1 className="text-forest-green dark:text-white tracking-tight text-3xl font-black leading-tight mb-3">
-                                    {isLogin ? "Welcome Back" : "Create Account"}
-                                </h1>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
-                                    {isLogin ? "Login to access your personalized farming assistant." : "Register to start your journey with GramSetu."}
-                                </p>
-                            </div>
 
-                            <form onSubmit={handleAuth} className="space-y-6">
-                                <div className="space-y-5">
-                                    <div className="space-y-2 relative group">
-                                        <label className="text-slate-700 dark:text-slate-300 text-sm font-bold ml-1" htmlFor="email">Email Address</label>
-                                        <div className="relative flex items-center">
-                                            <input
-                                                id="email"
-                                                type="email"
-                                                required
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="form-input flex w-full min-w-0 flex-1 resize-none rounded-xl text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary border-2 border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm h-14 px-5 text-base font-medium placeholder:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-black/40 focus:bg-white dark:focus:bg-[#0a1511]"
-                                                placeholder="Enter your email"
-                                            />
-                                            <div className="absolute right-4 text-primary pointer-events-none opacity-50 group-focus-within:opacity-100 transition-opacity">
-                                                <Mail className="h-5 w-5" />
-                                            </div>
+                            {/* ============= STEP 1: EMAIL + PASSWORD ============= */}
+                            {step === "credentials" && (
+                                <>
+                                    <div className="text-center mb-10">
+                                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl border border-primary/20 flex items-center justify-center mb-6 text-primary shadow-inner">
+                                            <Lock className="h-8 w-8" />
                                         </div>
+                                        <h1 className="text-forest-green dark:text-white tracking-tight text-3xl font-black leading-tight mb-3">
+                                            {isLogin ? "Welcome Back" : "Create Account"}
+                                        </h1>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
+                                            {isLogin ? "Login to access your personalized farming assistant." : "Register to start your journey with GramSetu."}
+                                        </p>
                                     </div>
 
-                                    <div className="space-y-2 relative group">
-                                        <label className="text-slate-700 dark:text-slate-300 text-sm font-bold ml-1" htmlFor="password">Password</label>
-                                        <div className="relative flex items-center">
-                                            <input
-                                                id="password"
-                                                type="password"
-                                                required
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="form-input flex w-full min-w-0 flex-1 resize-none rounded-xl text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary border-2 border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm h-14 px-5 text-base font-medium placeholder:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-black/40 focus:bg-white dark:focus:bg-[#0a1511]"
-                                                placeholder="Enter your password"
-                                            />
-                                            <div className="absolute right-4 text-primary pointer-events-none opacity-50 group-focus-within:opacity-100 transition-opacity">
-                                                <Key className="h-5 w-5" />
+                                    <form onSubmit={handleCredentials} className="space-y-6">
+                                        <div className="space-y-5">
+                                            <div className="space-y-2 relative group">
+                                                <label className="text-slate-700 dark:text-slate-300 text-sm font-bold ml-1" htmlFor="email">Email Address</label>
+                                                <div className="relative flex items-center">
+                                                    <input
+                                                        id="email"
+                                                        type="email"
+                                                        required
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        className="form-input flex w-full min-w-0 flex-1 resize-none rounded-xl text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary border-2 border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm h-14 px-5 text-base font-medium placeholder:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-black/40 focus:bg-white dark:focus:bg-[#0a1511]"
+                                                        placeholder="Enter your email"
+                                                    />
+                                                    <div className="absolute right-4 text-primary pointer-events-none opacity-50 group-focus-within:opacity-100 transition-opacity">
+                                                        <Mail className="h-5 w-5" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2 relative group">
+                                                <label className="text-slate-700 dark:text-slate-300 text-sm font-bold ml-1" htmlFor="password">Password</label>
+                                                <div className="relative flex items-center">
+                                                    <input
+                                                        id="password"
+                                                        type="password"
+                                                        required
+                                                        value={password}
+                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        className="form-input flex w-full min-w-0 flex-1 resize-none rounded-xl text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary border-2 border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm h-14 px-5 text-base font-medium placeholder:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-black/40 focus:bg-white dark:focus:bg-[#0a1511]"
+                                                        placeholder="Enter your password"
+                                                    />
+                                                    <div className="absolute right-4 text-primary pointer-events-none opacity-50 group-focus-within:opacity-100 transition-opacity">
+                                                        <Key className="h-5 w-5" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
+
+                                        {error && <div className="text-red-500 text-sm font-medium bg-red-100/50 p-3 rounded-lg border border-red-200">{error}</div>}
+
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full mt-4 cursor-pointer flex items-center justify-center rounded-xl h-14 px-6 bg-gradient-to-r from-primary to-[#0ebf84] hover:to-[#0ca875] hover:scale-[1.02] active:scale-[0.98] transition-all text-white text-lg font-black leading-normal tracking-wide shadow-xl shadow-primary/30 disabled:opacity-70 disabled:hover:scale-100"
+                                        >
+                                            <span>{loading ? "Processing..." : (isLogin ? "Send Login OTP" : "Register & Send OTP")}</span>
+                                            {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
+                                        </button>
+
+                                        <div className="relative flex py-4 items-center">
+                                            <div className="flex-grow border-t border-slate-300 dark:border-slate-700"></div>
+                                            <span className="flex-shrink-0 mx-4 text-slate-400 text-sm font-bold uppercase tracking-wider bg-transparent">or</span>
+                                            <div className="flex-grow border-t border-slate-300 dark:border-slate-700"></div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => { setIsLogin(!isLogin); setError(null); setSuccessMsg(null); }}
+                                            className="w-full cursor-pointer flex items-center justify-center rounded-xl h-12 px-4 bg-white/40 dark:bg-white/5 border-2 border-slate-300/50 dark:border-slate-700 hover:bg-white/80 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-slate-200 text-sm font-bold tracking-wide"
+                                        >
+                                            {isLogin ? "Create an account" : "Login instead"}
+                                        </button>
+
+                                        <div className="text-center pt-2">
+                                            <Link to="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-primary transition-colors">
+                                                Back to Home
+                                                <ArrowRight className="ml-1 h-4 w-4" />
+                                            </Link>
+                                        </div>
+                                    </form>
+                                </>
+                            )}
+
+                            {/* ============= STEP 2: OTP VERIFICATION ============= */}
+                            {step === "otp" && (
+                                <>
+                                    <div className="text-center mb-10">
+                                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl border border-primary/20 flex items-center justify-center mb-6 text-primary shadow-inner">
+                                            <ShieldCheck className="h-8 w-8" />
+                                        </div>
+                                        <h1 className="text-forest-green dark:text-white tracking-tight text-3xl font-black leading-tight mb-3">
+                                            Verify OTP
+                                        </h1>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
+                                            We've sent a one-time password to<br />
+                                            <span className="text-primary font-bold">{email}</span>
+                                        </p>
                                     </div>
-                                </div>
 
-                                {error && <div className="text-red-500 text-sm font-medium bg-red-100/50 p-3 rounded-lg border border-red-200">{error}</div>}
+                                    <form onSubmit={handleOtpVerify} className="space-y-6">
+                                        <div className="space-y-2 relative group">
+                                            <label className="text-slate-700 dark:text-slate-300 text-sm font-bold ml-1" htmlFor="otp">Enter OTP</label>
+                                            <div className="relative flex items-center">
+                                                <input
+                                                    id="otp"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    required
+                                                    maxLength={6}
+                                                    value={otp}
+                                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                                                    className="form-input flex w-full min-w-0 flex-1 resize-none rounded-xl text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary border-2 border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm h-14 px-5 text-center text-2xl font-black tracking-[0.5em] placeholder:text-slate-400 placeholder:text-base placeholder:tracking-normal placeholder:font-medium transition-all hover:bg-white/80 dark:hover:bg-black/40 focus:bg-white dark:focus:bg-[#0a1511]"
+                                                    placeholder="Enter 6-digit OTP"
+                                                    autoFocus
+                                                />
+                                                <div className="absolute right-4 text-primary pointer-events-none opacity-50 group-focus-within:opacity-100 transition-opacity">
+                                                    <ShieldCheck className="h-5 w-5" />
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full mt-4 cursor-pointer flex items-center justify-center rounded-xl h-14 px-6 bg-gradient-to-r from-primary to-[#0ebf84] hover:to-[#0ca875] hover:scale-[1.02] active:scale-[0.98] transition-all text-white text-lg font-black leading-normal tracking-wide shadow-xl shadow-primary/30 disabled:opacity-70 disabled:hover:scale-100"
-                                >
-                                    <span>{loading ? "Processing..." : (isLogin ? "Secure Login" : "Register")}</span>
-                                    {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
-                                </button>
+                                        {successMsg && <div className="text-green-600 text-sm font-medium bg-green-100/50 p-3 rounded-lg border border-green-200 flex items-center gap-2"><ShieldCheck className="h-4 w-4 flex-shrink-0" />{successMsg}</div>}
+                                        {error && <div className="text-red-500 text-sm font-medium bg-red-100/50 p-3 rounded-lg border border-red-200">{error}</div>}
 
-                                <div className="relative flex py-4 items-center">
-                                    <div className="flex-grow border-t border-slate-300 dark:border-slate-700"></div>
-                                    <span className="flex-shrink-0 mx-4 text-slate-400 text-sm font-bold uppercase tracking-wider bg-transparent">or</span>
-                                    <div className="flex-grow border-t border-slate-300 dark:border-slate-700"></div>
-                                </div>
+                                        <button
+                                            type="submit"
+                                            disabled={loading || otp.length < 4}
+                                            className="w-full mt-4 cursor-pointer flex items-center justify-center rounded-xl h-14 px-6 bg-gradient-to-r from-primary to-[#0ebf84] hover:to-[#0ca875] hover:scale-[1.02] active:scale-[0.98] transition-all text-white text-lg font-black leading-normal tracking-wide shadow-xl shadow-primary/30 disabled:opacity-70 disabled:hover:scale-100"
+                                        >
+                                            <span>{loading ? "Verifying..." : "Verify & Continue"}</span>
+                                            {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
+                                        </button>
 
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLogin(!isLogin)}
-                                    className="w-full cursor-pointer flex items-center justify-center rounded-xl h-12 px-4 bg-white/40 dark:bg-white/5 border-2 border-slate-300/50 dark:border-slate-700 hover:bg-white/80 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-slate-200 text-sm font-bold tracking-wide"
-                                >
-                                    {isLogin ? "Create an account" : "Login instead"}
-                                </button>
-
-                                <div className="text-center pt-2">
-                                    <Link to="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-primary transition-colors">
-                                        Back to Home
-                                        <ArrowRight className="ml-1 h-4 w-4" />
-                                    </Link>
-                                </div>
-                            </form>
+                                        <div className="flex items-center justify-between pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleBack}
+                                                className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-primary transition-colors"
+                                            >
+                                                <ArrowLeft className="mr-1 h-4 w-4" />
+                                                Back
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleResendOtp}
+                                                disabled={loading}
+                                                className="text-sm font-bold text-primary hover:text-primary-dark transition-colors disabled:opacity-50"
+                                            >
+                                                Resend OTP
+                                            </button>
+                                        </div>
+                                    </form>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

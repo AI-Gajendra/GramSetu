@@ -8,6 +8,7 @@ frontend/node_modules/
 .env.production
 .env.staging
 *.csv
+taken.json
 
 # API docs (may contain sensitive URLs)
 api_docs.json
