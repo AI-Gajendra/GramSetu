@@ -103,54 +103,33 @@ function AssistantContent() {
         audio.onended = () => setPlayingAudioId(null);
     };
 
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages]);
-
-    useEffect(() => {
-        // Only run createSession if we don't have a chatId yet and are on the default screen
-        if (!chatId && messages.length === 1 && messages[0].id === "1") {
-            const createSession = async () => {
-                try {
-                    const res = await api.post("/api/chat/create");
-                    const id = res.data?.chat?.id || res.data?.chatId || res.data?.id;
-                    if (id) {
-                        setChatId(id);
-                        fetchChats(); // Refresh sidebar to show the new chat
-                    } else {
-                        console.warn("Chat session created but no ID returned:", res.data);
-                    }
-                } catch (err: any) {
-                    console.error("[CHAT] Create FAILED:", err?.response?.status, err?.response?.data || err.message);
-                }
-            };
-            createSession();
-        }
-    }, [chatId]);
-
-    const handleNewChat = async () => {
-        setIsLoadingChat(true);
+    const getOrCreateSession = async (): Promise<string | null> => {
+        if (chatId) return chatId;
         try {
             const res = await api.post("/api/chat/create");
             const newId = res.data?.chat?.id || res.data?.chatId || res.data?.id;
-            setChatId(newId);
-            setMessages([
-                {
-                    id: Date.now().toString(),
-                    sender: "bot",
-                    text: "Namaste! 🙏 How can I help you with your crops or banking needs today?",
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                }
-            ]);
-            fetchChats();
-            setSidebarOpen(false);
-        } catch (err) {
-            console.error("Error creating new chat:", err);
-        } finally {
-            setIsLoadingChat(false);
+            if (newId) {
+                setChatId(newId);
+                fetchChats();
+                return newId;
+            }
+        } catch (err: any) {
+            console.error("Session creation failed:", err?.response?.data || err.message);
         }
+        return null;
+    };
+
+    const handleNewChat = () => {
+        setChatId(null);
+        setMessages([
+            {
+                id: Date.now().toString(),
+                sender: "bot",
+                text: "Namaste! 🙏 How can I help you with your crops or banking needs today?",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+        ]);
+        setSidebarOpen(false);
     };
 
     const handleSelectChat = async (id: string) => {
@@ -196,7 +175,10 @@ function AssistantContent() {
         if (e) e.preventDefault();
         if (!textInput.trim() || sending) return;
 
-        if (!chatId) {
+        setSending(true);
+        const activeChatId = await getOrCreateSession();
+
+        if (!activeChatId) {
             const errorMsg: Message = {
                 id: Date.now().toString(),
                 sender: 'bot',
@@ -204,6 +186,7 @@ function AssistantContent() {
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
             setMessages(prev => [...prev, errorMsg]);
+            setSending(false);
             return;
         }
 
@@ -215,11 +198,10 @@ function AssistantContent() {
         };
         setMessages(prev => [...prev, newMsg]);
         setTextInput("");
-        setSending(true);
 
         try {
             const formData = new FormData();
-            formData.append("chatId", chatId);
+            formData.append("chatId", activeChatId);
             formData.append("message", newMsg.text);
 
             const res = await api.post("/api/chat/send", formData);
@@ -258,17 +240,6 @@ function AssistantContent() {
     };
 
     const startRecording = async () => {
-        if (!chatId) {
-            const errorMsg: Message = {
-                id: Date.now().toString(),
-                sender: 'bot',
-                text: "⚠️ Chat session not available. Please make sure you're logged in and try refreshing.",
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            setMessages(prev => [...prev, errorMsg]);
-            return;
-        }
-
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 const errorMsg: Message = {
@@ -323,6 +294,21 @@ function AssistantContent() {
     };
 
     const sendAudio = async (audioBlob: Blob) => {
+        setSending(true);
+        const activeChatId = await getOrCreateSession();
+
+        if (!activeChatId) {
+            const errorMsg: Message = {
+                id: Date.now().toString(),
+                sender: 'bot',
+                text: "⚠️ Chat session not available. Please make sure you're logged in and try refreshing.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, errorMsg]);
+            setSending(false);
+            return;
+        }
+
         const userAudioUrl = URL.createObjectURL(audioBlob);
         const userMsg: Message = {
             id: Date.now().toString(),
@@ -332,11 +318,10 @@ function AssistantContent() {
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prev => [...prev, userMsg]);
-        setSending(true);
 
         try {
             const formData = new FormData();
-            formData.append("chatId", chatId!);
+            formData.append("chatId", activeChatId);
             formData.append("message", "");
             formData.append("audio", audioBlob, "recording.webm");
 
