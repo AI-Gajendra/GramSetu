@@ -24,7 +24,7 @@ export default function LandingPage() {
                     </nav>
                     <div className="flex items-center gap-4">
                         <Link href="/login" className="flex items-center justify-center rounded-xl bg-gradient-to-r from-primary flex-none to-primary-dark px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                            <span className="mr-1">Launch App</span>
+                            <span className="mr-1">Login</span>
                             <Rocket className="h-4 w-4" />
                         </Link>
                     </div>
